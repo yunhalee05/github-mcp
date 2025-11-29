@@ -17,7 +17,6 @@ import kotlinx.io.buffered
 fun main(): Unit = runBlocking {
     // 환경변수 설정
     val githubToken = System.getenv("GITHUB_TOKEN") ?: ""
-    val defaultWorkingDir = System.getenv("WORKING_DIR") ?: System.getProperty("user.dir")
     val defaultBaseBranch = System.getenv("PR_BASE_BRANCH") ?: "develop"
     val jiraPrefix = System.getenv("PR_JIRA_PREFIX") ?: "PROJ"
 
@@ -26,9 +25,9 @@ fun main(): Unit = runBlocking {
     System.err.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     System.err.println("🚀 GitHub MCP Server")
     System.err.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    System.err.println("기본 디렉토리: $defaultWorkingDir")
     System.err.println("GitHub token: ${if (githubToken.isNotEmpty()) "✅ Configured" else "⚠️  Not configured"}")
     System.err.println("기본 Base 브랜치: $defaultBaseBranch")
+    System.err.println("JIRA Prefix: $jiraPrefix")
     System.err.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
     // MCP 서버 생성
@@ -48,7 +47,6 @@ fun main(): Unit = runBlocking {
 
     // Tool Context 생성
     val toolContext = ToolContext(
-        defaultWorkingDir = defaultWorkingDir,
         defaultBaseBranch = defaultBaseBranch,
         jiraPrefix = jiraPrefix,
         githubService = githubService

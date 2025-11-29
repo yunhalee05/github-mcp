@@ -17,26 +17,50 @@ fun createStartPrWorkflowTool(context: ToolContext) = RegisteredTool(
     Tool(
         name = "start_pr_workflow",
         description = """
-            PR 생성 워크플로우를 시작합니다.
-            현재 Git 상태를 확인하고 사용 가능한 브랜치 목록을 반환합니다.
-            사용자에게 base 브랜치를 선택하도록 안내해주세요.
+            [STEP 1/4] PR 생성 워크플로우를 시작합니다.
+
+            **이 툴의 역할:**
+            - 현재 Git 상태를 확인합니다
+            - 사용 가능한 브랜치 목록을 반환합니다
+            - main/master 브랜치에서 실행 시 에러를 반환합니다
+
+            **반환 내용:**
+            - 현재 브랜치명
+            - 사용 가능한 base 브랜치 목록 (develop, main, master 중 존재하는 것)
+
+            **다음 필수 액션:**
+            사용자가 브랜치를 선택하면 반드시 'select_base_branch' 툴을 즉시 호출하세요.
+            - 사용자가 숫자(1, 2, 3 등)를 선택하면 해당하는 브랜치명으로 변환하여 전달
+            - 사용자가 브랜치명을 직접 입력하면 그대로 전달
+            - base_branch 파라미터에 선택된 브랜치명을 전달
+
+            **예시:**
+            사용자: "1번 선택" → select_base_branch(base_branch: "develop")
+            사용자: "develop" → select_base_branch(base_branch: "develop")
+
+            **AI 중요 지시사항:**
+            - working_dir 파라미터에 현재 작업 디렉토리를 반드시 전달하세요
+            - <env>Working directory: ...</env>에서 확인 가능
             """.trimIndent(),
         inputSchema = ToolSchema(
             properties = buildJsonObject {
                 put("working_dir", buildJsonObject {
                     put("type", "string")
-                    put("description", "작업 디렉토리 경로 (선택사항, 기본값: 환경변수 또는 현재 디렉토리)")
+                    put("description", "현재 작업 디렉토리 경로 (AI가 <env>에서 전달) - REQUIRED")
                 })
-            }
+            },
+            required = listOf("working_dir")
         )
     )
 ) { request ->
-    // 작업 디렉토리 설정
     val workingDir = request.arguments?.get("working_dir")?.jsonPrimitive?.content
-    val gitService = context.createGitService(workingDir)
+        ?: return@RegisteredTool CallToolResult(
+            content = listOf(TextContent(text = "❌ working_dir이 필요합니다.")),
+            isError = true
+        )
 
     // Git 저장소 확인
-    val currentBranch = gitService.getCurrentBranch().getOrNull()
+    val currentBranch = context.gitService.getCurrentBranch(workingDir).getOrNull()
 
     if (currentBranch == null) {
         return@RegisteredTool CallToolResult(
@@ -64,7 +88,7 @@ fun createStartPrWorkflowTool(context: ToolContext) = RegisteredTool(
     }
 
     // 사용 가능한 브랜치 목록
-    val branches = gitService.getBranches().getOrElse { emptyList() }
+    val branches = context.gitService.getBranches(workingDir).getOrElse { emptyList() }
     val commonBases = listOf("develop", "main", "master")
     val availableBases = commonBases.filter { it in branches }
 

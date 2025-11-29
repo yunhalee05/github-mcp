@@ -6,65 +6,65 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 
-class GitService(private val workingDir: String = ".") {
+class GitService {
 
-    suspend fun getCurrentBranch(): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun getCurrentBranch(workingDir: String): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
-            executeCommand("git", "branch", "--show-current").trim()
+            executeCommand(workingDir, "git", "branch", "--show-current").trim()
         }
     }
 
-    suspend fun getBranches(): Result<List<String>> = withContext(Dispatchers.IO) {
+    suspend fun getBranches(workingDir: String): Result<List<String>> = withContext(Dispatchers.IO) {
         runCatching {
-            val output = executeCommand("git", "branch", "-r")
+            val output = executeCommand(workingDir, "git", "branch", "-r")
             output.lines()
                 .filter { it.contains("origin/") && !it.contains("HEAD") }
                 .map { it.trim().removePrefix("origin/") }
         }
     }
 
-    suspend fun getDiff(baseBranch: String, currentBranch: String): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun getDiff(workingDir: String, baseBranch: String, currentBranch: String): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
-            executeCommand("git", "diff", "origin/$baseBranch...$currentBranch")
+            executeCommand(workingDir, "git", "diff", "origin/$baseBranch...$currentBranch")
         }
     }
 
-    suspend fun getChangedFiles(baseBranch: String, currentBranch: String): Result<List<String>> = withContext(Dispatchers.IO) {
+    suspend fun getChangedFiles(workingDir: String, baseBranch: String, currentBranch: String): Result<List<String>> = withContext(Dispatchers.IO) {
         runCatching {
-            val output = executeCommand("git", "diff", "--name-only", "origin/$baseBranch...$currentBranch")
+            val output = executeCommand(workingDir, "git", "diff", "--name-only", "origin/$baseBranch...$currentBranch")
             output.lines().filter { it.isNotBlank() }
         }
     }
 
-    suspend fun getCommits(baseBranch: String, currentBranch: String): Result<List<String>> = withContext(Dispatchers.IO) {
+    suspend fun getCommits(workingDir: String, baseBranch: String, currentBranch: String): Result<List<String>> = withContext(Dispatchers.IO) {
         runCatching {
-            val output = executeCommand("git", "log", "origin/$baseBranch..$currentBranch", "--pretty=format:%s")
+            val output = executeCommand(workingDir, "git", "log", "origin/$baseBranch..$currentBranch", "--pretty=format:%s")
             output.lines().filter { it.isNotBlank() }
         }
     }
 
-    suspend fun getCommitCount(baseBranch: String, currentBranch: String): Result<Int> = withContext(Dispatchers.IO) {
+    suspend fun getCommitCount(workingDir: String, baseBranch: String, currentBranch: String): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
-            executeCommand("git", "rev-list", "--count", "origin/$baseBranch..$currentBranch").trim().toInt()
+            executeCommand(workingDir, "git", "rev-list", "--count", "origin/$baseBranch..$currentBranch").trim().toInt()
         }
     }
 
-    suspend fun pushBranch(branch: String): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun pushBranch(workingDir: String, branch: String): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
-            executeCommand("git", "push", "-u", "origin", branch)
+            executeCommand(workingDir, "git", "push", "-u", "origin", branch)
         }
     }
 
-    suspend fun fetchBranch(branch: String): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun fetchBranch(workingDir: String, branch: String): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
-            executeCommand("git", "fetch", "origin", branch)
+            executeCommand(workingDir, "git", "fetch", "origin", branch)
         }
     }
 
-    suspend fun checkRemoteBranchExists(branch: String): Result<Boolean> = withContext(Dispatchers.IO) {
+    suspend fun checkRemoteBranchExists(workingDir: String, branch: String): Result<Boolean> = withContext(Dispatchers.IO) {
         runCatching {
             try {
-                executeCommand("git", "ls-remote", "--exit-code", "--heads", "origin", branch)
+                executeCommand(workingDir, "git", "ls-remote", "--exit-code", "--heads", "origin", branch)
                 true
             } catch (e: Exception) {
                 false
@@ -72,9 +72,9 @@ class GitService(private val workingDir: String = ".") {
         }
     }
 
-    suspend fun getRepositoryInfo(): Result<Map<String, String>> = withContext(Dispatchers.IO) {
+    suspend fun getRepositoryInfo(workingDir: String): Result<Map<String, String>> = withContext(Dispatchers.IO) {
         runCatching {
-            val remoteUrl = executeCommand("git", "config", "--get", "remote.origin.url").trim()
+            val remoteUrl = executeCommand(workingDir, "git", "config", "--get", "remote.origin.url").trim()
             val owner: String
             val repo: String
 
@@ -97,7 +97,7 @@ class GitService(private val workingDir: String = ".") {
         }
     }
 
-    private fun executeCommand(vararg command: String): String {
+    private fun executeCommand(workingDir: String, vararg command: String): String {
         val process = ProcessBuilder(*command)
             .directory(File(workingDir))
             .redirectErrorStream(true)

@@ -13,10 +13,16 @@ class ToolRegistry(private val context: ToolContext) {
      * 모든 RegisteredTool을 반환합니다.
      */
     fun getAllTools(): List<RegisteredTool> = listOf(
+        // 스마트 진입점 (권장)
+        createPrSmartTool(context),
+
+        // 기존 4단계 워크플로우 (단계별 제어가 필요한 경우)
         createStartPrWorkflowTool(context),
         createSelectBaseBranchTool(context),
         createGeneratePrContentTool(context),
         createCreatePrConfirmedTool(context),
+
+        // 유틸리티
         createGetCurrentBranchTool(context)
     )
 
