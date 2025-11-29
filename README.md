@@ -32,7 +32,7 @@ claude mcp add github-mcp -s user \
   -e GITHUB_TOKEN=ghp_your_token_here \
   -e PR_BASE_BRANCH=develop \
   -e PR_JIRA_PREFIX=PROJ \
-  -- java -jar /path/to/github-mcp/build/libs/github-mcp-1.0-SNAPSHOT.jar
+  -- java -jar https://github.com/yunhalee05/github-mcp/releases/download/v1.0.0/github_mcp-0.0.1-SNAPSHOT.jar
 ```
 
 ### 방법 2: 설정 파일 직접 수정
